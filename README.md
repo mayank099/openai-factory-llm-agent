@@ -11,10 +11,6 @@ pip freeze > requirements.txt
 
 python run.py
 
-## NGROK
-ngrok.exe http 5001 --domain enjoyed-slowly-cowbird.ngrok-free.app
-
-
 pip freeze > requirements.txt
 
 
