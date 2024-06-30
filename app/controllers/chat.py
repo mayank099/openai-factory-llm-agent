@@ -7,6 +7,7 @@ from tenacity import retry, wait_random_exponential, stop_after_attempt
 from termcolor import colored  
 import logging.config
 import json
+from app.prompts.prompttemplate import main_qa_prompt
 
 load_dotenv()  # Load environment variables from .env file
 logger = logging.getLogger(__name__)  # get a logger instance
@@ -26,6 +27,7 @@ def chat_completion_request(messages, tools=None, tool_choice=None, model=GPT_MO
             tools=tools,
             tool_choice=tool_choice,
         )
+        print(response)
         return response
     except Exception as e:
         print("Unable to generate ChatCompletion response")
@@ -33,46 +35,86 @@ def chat_completion_request(messages, tools=None, tool_choice=None, model=GPT_MO
         return e
             
             
+import json
+
 def handle_function_calling(tool_calls, messages):
     try:
-        
-        tool_call_id = tool_calls[0].id
-        tool_function_name = tool_calls[0].function.name
-        tool_query_string = eval(tool_calls[0].function.arguments)['location']
-        # Step 3: Call the function and retrieve results. Append the results to the messages list.      
-        if tool_function_name == 'get_current_weather':
-            results = {"india" : "32 Celsius"}
-            json_data = json.dumps(results)
-            messages.append({
-                "role":"tool", 
-                "tool_call_id":tool_call_id, 
-                "name": tool_function_name, 
-                "content":json_data
-            })
+        for tool_call in tool_calls:
+            tool_call_id = tool_call.id
+            tool_function_name = tool_call.function.name
+            print(tool_function_name)
             
-            # Step 4: Invoke the chat completions API with the function response appended to the messages list
-            # Note that messages with role 'tool' must be a response to a preceding message with 'tool_calls'
-            model_response_with_function_call = client.chat.completions.create(
+            if tool_function_name == 'add_to_cart':
+                print(tool_call.function.arguments)
+                results = {"status": "Success", "message": "The order was added successfully to your cart"}
+                json_data = json.dumps(results)
+                messages.append({
+                    "role":"tool", 
+                    "tool_call_id":tool_call_id, 
+                    "name": tool_function_name, 
+                    "content":json_data
+                })
+                
+            elif tool_function_name == 'search_products':
+                print(tool_call.function.arguments)
+                results = {"sku": "GA04855-AU","in_stock": "yes","details": "The price of PS5 is 73 dollars"}
+                json_data = json.dumps(results)
+                messages.append({
+                    "role":"tool", 
+                    "tool_call_id":tool_call_id, 
+                    "name": tool_function_name, 
+                    "content":json_data
+                })
+                
+            elif tool_function_name == 'cancel_order':
+                print("234344")
+                print(tool_call.function.arguments)
+                results = {"status": "Success", "message": "The order has been successfully cancelled"}
+                json_data = json.dumps(results)
+                messages.append({
+                    "role":"tool", 
+                    "tool_call_id":tool_call_id, 
+                    "name": tool_function_name, 
+                    "content":json_data
+                })
+
+            elif tool_function_name == 'view_product_details':
+                print(tool_call.function.arguments)
+                results =  [{"sku": "GA04855-AU", "in_stock": "yes", "details" : "The price of PS5 is 73 dollars"},{"sku": "GA04834-US", "in_stock": "yes", "details" : "The price of Shiny Leather Boots is 80 dollars"}]
+                json_data = json.dumps(results)
+                messages.append({
+                    "role":"tool", 
+                    "tool_call_id":tool_call_id, 
+                    "name": tool_function_name, 
+                    "content":json_data
+                }) 
+
+            else: 
+                print(f"Error: function {tool_function_name} does not exist")
+
+        # Step 4: Invoke the chat completions API with the function response appended to the messages list
+        # Note that messages with role 'tool' must be a response to a preceding message with 'tool_calls'
+        model_response_with_function_call = client.chat.completions.create(
                 model="gpt-4o",
                 messages=messages,
             )  # get a new response from the model where it can see the function response
 
-            assistant_message = model_response_with_function_call.choices[0].message
-            tool_calls = assistant_message.tool_calls
-            messages.append(assistant_message)
-
-            if tool_calls:
-                print("nhi agya fir se call kro")
-                return assistant_message, True
-            else:
-                return assistant_message, False
-        else: 
-            print(f"Error: function {tool_function_name} does not exist")
+        assistant_message = model_response_with_function_call.choices[0].message
+        print("Model response after function call")
+        tool_calls = assistant_message.tool_calls
+        print(assistant_message)
+        messages.append(assistant_message)
+        print("Model response after function call")
+        if tool_calls:
+            print("New tool call required")
+            return assistant_message, True
+        else:
+            return assistant_message, False
         ## Check for tool
     except Exception as e:
         print(f"Exception occurred: {e}")
-        return None, False                
-            
+        return None, False   
+           
             
         
 def chat_agent(params):
@@ -82,7 +124,7 @@ def chat_agent(params):
     user_phone = params["user_phone"]
 
     chat_history = get_chat_history(user_id)
-    messages = []    
+    messages = [{"role" : "system", "content": main_qa_prompt()}]
     
     # Append chat_history to chat.history if is not empty
     if len(chat_history) > 0:

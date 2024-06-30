@@ -1,50 +1,81 @@
-## Todo Fix them later
 tools = [
     {
         "type": "function",
         "function": {
-            "name": "get_current_weather",
-            "description": "Get the current weather",
+            "name": "cancel_order",
+            "description": "This function is used for cancelling any order",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "location": {
+                    "order_id": {
                         "type": "string",
-                        "description": "The city and state, e.g. San Francisco, CA",
+                        "description": "The unique identifier of the order to be cancelled"
                     },
-                    "format": {
+                    "reason": {
                         "type": "string",
-                        "enum": ["celsius", "fahrenheit"],
-                        "description": "The temperature unit to use. Infer this from the users location.",
-                    },
+                        "description": "The reason for order cancellation (optional)"
+                    }
                 },
-                "required": ["location", "format"],
+                "required": ["order_id"]
             },
         }
     },
     {
         "type": "function",
         "function": {
-            "name": "get_n_day_weather_forecast",
-            "description": "Get an N-day weather forecast",
+            "name": "add_to_cart",
+            "description": "Add items to the shopping cart",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "location": {
+                    "item_id": {
                         "type": "string",
-                        "description": "The city and state, e.g. San Francisco, CA",
+                        "description": "The unique identifier of the item to add to the cart"
                     },
-                    "format": {
-                        "type": "string",
-                        "enum": ["celsius", "fahrenheit"],
-                        "description": "The temperature unit to use. Infer this from the users location.",
-                    },
-                    "num_days": {
-                        "type": "integer",
-                        "description": "The number of days to forecast",
+                    "quantity": {
+                        "type": "number",
+                        "description": "The quantity of the item to add (default is 1)"
                     }
                 },
-                "required": ["location", "format", "num_days"]
+                "required": ["item_id"]
+            },
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "search_products",
+            "description": "Search for products based on keywords or filters",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "Search query or keywords"
+                    },
+                    "filters": {
+                        "type": "object",
+                        "description": "Additional filters such as price range, brand, or category (optional)"
+                    }
+                },
+                "required": ["query"]
+            },
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "view_product_details",
+            "description": "Get detailed information about a specific product",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "product_id": {
+                        "type": "string",
+                        "description": "The unique identifier of the product"
+                    }
+                },
+                "required": ["product_id"]
             },
         }
     },
